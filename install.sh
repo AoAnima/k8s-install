@@ -69,13 +69,12 @@ sudo sysctl --system
 echo "Запускаем службы cri-o"
 sudo systemctl daemon-reload
 sudo systemctl enable crio --now
-sudo systemctl status crio
 CRIOSTATUS=$(systemctl is-active crio)
 if [[ "$CRIOSTATUS"  =~ .*"active".*  ]] ; then
     echo "CRI-O зпущен!"
 fi
 
-echo "Установим системные контейнеры"
+echo "Установим системные контейнеры, может занимать 10+ минут"
 sudo kubeadm config images pull
 
 echo "разрешить разворачивать Pods на мастер ноде"
