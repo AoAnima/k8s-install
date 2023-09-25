@@ -1,4 +1,4 @@
-#/bin
+#/bin/bash
 CNI_PLUGINS_VERSION="v1.3.0"
 CRICTL_VERSION="v1.28.0"
 ARCH="amd64"
