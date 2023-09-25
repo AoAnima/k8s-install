@@ -5,24 +5,24 @@
 ```
 $ install.sh
 ```
-Скачает все необходимые компоненты, установит их, добавит необходимые измнеения в конфиги.
+Скачает все необходимые компоненты, установит их, добавит необходимые измнеения в конфиги. Разрешит разворачивать поды на мастер ноде. Запустит кластер. 
 Устанавливаемые пакеты:
-ebtables
-socat
-ethtool
-etcd
-conntrack-tools
+* ebtables
+* socat
+* ethtool
+* etcd
+* conntrack-tools
 
-cri-o
-cni-plugins
-crictl
-kubeadm
-kubelet
-kubectl
+* cri-o
+* cni-plugins
+* crictl
+* kubeadm
+* kubelet
+* kubectl
 
-kube-apiserver
-kube-controller-manager
-kube-scheduler
-kube-proxy
-pause
-coredns
+* kube-apiserver
+* kube-controller-manager
+* kube-scheduler
+* kube-proxy
+* pause
+* coredns
