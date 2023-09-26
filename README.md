@@ -19,6 +19,8 @@ $ install.sh
 * kubeadm
 * kubelet
 * kubectl
+
+  
 Служебные контейнеры 
 * kube-apiserver
 * kube-controller-manager
