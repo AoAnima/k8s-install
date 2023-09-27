@@ -1,3 +1,4 @@
+#/bin/bash
 function лог(){
  echo -e "\033[36m $1 \033[0m"
 }
