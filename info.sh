@@ -1,4 +1,5 @@
 #/bin/bash
+
 function лог(){
  echo -e "\033[36m $1 \033[0m"
 }
@@ -27,6 +28,17 @@ function палитра (){
         done
     done
     echo ""
+}
+
+function проверить() {
+    лог "Проверка: $1"
+    if ! app="$(type -p "$1")" || [[ -z $app ]]; then
+        инфо "Не найден $1"
+        return 1
+    else
+    инфо "Найден $1"
+        return 0
+    fi
 }
 
 # \033[30m - чёрный
