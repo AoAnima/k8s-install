@@ -21,9 +21,8 @@ if [[ ! -d "/var/run/crio" ]]; then
 fi
 
 
-
 CRIOVER=$(crio version)
-if [[ "$CRIOVER"  =~ .*"1.28.1".*  ]] ; then  
+if проверить "crio"  &&  [[ "$CRIOVER"  =~ .*"1.28.1".*  ]] ; then  
     инфо "CRI-O Установлен: 1.28.1"
 else 
     ошибка "CRI-O Не Установлен"
@@ -32,20 +31,21 @@ else
     cd ./cri-o && sudo ./install
 fi
 
+
 if [[ $(ls -l "$DEST" | wc -l) < 0   ]] ; then
     лог "Установим сетевой плагин cni-plugins"
     curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C "$DEST" -xz
 fi
 
-if [[ ! $(crictl -v)  =~ .*"v1.28.0".*  ]] ; then
+if проверить "crictl" && [[ ! $(crictl -v)  =~ .*"v1.28.0".*  ]] ; then
     лог "Установим crictl"
     curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $DOWNLOAD_DIR -xz
 else
     инфо "crictl установлен"
 fi
 
-
-if [[ ! $(kubeadm version -o=short) =~ .*"v1.28.2".*  ]] ; then
+ app="$(type -p "kubeadm,kubelet")"
+if проверить "kubeadm" && проверить "kubelet" && [[ ! $(kubeadm version -o=short) =~ .*"v1.28.2".*  ]] ; then
     лог  "установим kubeadm,kubelet"
     cd $DOWNLOAD_DIR
     sudo curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet} 
@@ -59,7 +59,7 @@ else
     инфо "kubeadm,kubelet установлен"
 fi
 
-if [[ ! $(kubectl version) =~ .*"v1.28.2".*  ]] ; then
+if проверить "kubectl" && [[ ! $(kubectl version) =~ .*"v1.28.2".*  ]] ; then
     лог "устпановим kubectl"
     sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
@@ -102,7 +102,7 @@ else
 fi
 
 
-function checkSystemPods(){
+function ПроверитьСистемныеПоды(){
     requiredPods=(
         pod/registry
         pod/coredns
@@ -131,7 +131,7 @@ function checkSystemPods(){
     fi
 }
 
-checkSystemPods
+ПроверитьСистемныеПоды
 
 
 function ПроверитьСтатусНоды(){
@@ -169,12 +169,18 @@ fi
 function СоздатьПодРеестра() {
     registryStatus=$(kubectl apply -f ../registry/registry.yaml)
     if [[ "$registryStatus"  =~ .*"created".* || "$registryStatus"  =~ .*"unchanged".* || "$registryStatus"  =~ .*"configured".* ]] ; then
+
         инфо "под реестр создан, "
         лог "получим имя присвоенное поду"
+
         registryName=$(kubectl get pods -l app=registry -o custom-columns=:metadata.name --no-headers)
+
         лог "Имя пода: $registryName"
+
         registry=$(kubectl get pod "$registryName" -o jsonpath='{.status.phase}')
+
         лог "Статус  пода: $registry"
+
         if [[ "$registry"  =~ .*"Running".*  ]] ; then
             инфо "под реестр запущен! пробуем подключиться и получить каталог образов"
             catalog=$(curl -X GET http://localhost:30000/v2/_catalog)
@@ -182,10 +188,9 @@ function СоздатьПодРеестра() {
             if [[ "$catalog"  =~ .*'{"repositories":[]}'.*  ]] ; then
                 лог "Репозиторий работает"
                 инфо -e "Настройка завершена"
-
                 echo -e "\033[44m  \033[33m Необходимо установить систему сборки контейнеров, рекоменддуется kaniko: для этого нужно либо собрать из исходников, либо скачать бинарный файл, либо использовать контейнер для k8s. \033[0m"
 
-                echo -e "\033[42m \033[30m В контексте текущего репозитория kaniko уже скомпилирован и должен находится в папку /kaniko, проверим и попытаемся установить \033[0m"
+               
             else
                 ошибка "Не удаётся подключиться к реестру"
             fi
@@ -215,15 +220,50 @@ fi
 
 ПроверитьТома
 
+ function проверитьGit() {
+        if проверить "git" ; then
+        лог "Git установленн"
+            return 0
+        else
+            ошибка "На текущей системе не установленн git, установите."
+            return 1
+        fi
+    }
+
+
 
 function УстановитьKaniko (){
 
-if [[ -d "../kaniko" ]]; then
+if [[ -d "../kaniko1" ]]; then
+    echo -e "\e[5;37;44m В контексте текущего репозитория kaniko уже скомпилирован и должен находится в папку /kaniko, проверим и попытаемся установить \033[0m"
 
     sudo install -o root -g root -m 0777 ../kaniko/build /usr/local/bin/build
-    инфо "Kaniko успешно установлен"
-
+    
+    инфо "Kaniko успешно установлен (*^‿^*)"
+else 
+    echo -e "\e[0;37;45m Не удалось найти директорию с бинарным файлом kaniko  ( ಠ ʖ̯ ಠ) \033[0m"
+   
+    if проверить "go"; then
+        gitStatus=$(проверитьGit)
+        лог "$gitStatus"
+        if [[ "$gitStatus" == 0 ]]; then
+            git clone https://github.com/GoogleContainerTools/kaniko.git
+            cd ./kaniko
+            go build -ldflags '-extldflags "-static" -X github.com/GoogleContainerTools/kaniko/pkg/version.version=v1.15.0 -w -s ' -o ./build github.com/GoogleContainerTools/kaniko/cmd/executor
+            sudo install -o root -g root -m 0777 ../kaniko/build /usr/local/bin/build
+            инфо "Kaniko успешно установлен"
+        fi
+     else 
+        ошибка "На текущей системе не установленн Go компилятор, установите."
+        проверитьGit
+        return 1
+    fi
 fi
     
 }
- УстановитьKaniko
+УстановитьKaniko
+
+
+
+
+
